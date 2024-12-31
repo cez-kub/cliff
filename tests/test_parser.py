@@ -3,7 +3,7 @@ import sys
 import os
 # Add the 'scripts' folder to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
-from parser import parse_case_statements, parse_window_functions, parse_calendar_functions, parse_dynamic_sql
+from parser import parse_case_statements, parse_window_functions, parse_calendar_functions, parse_dynamic_sql, translate_identifiers
 
 class TestParser(unittest.TestCase):
     def test_parse_case_statements(self):
@@ -46,6 +46,21 @@ class TestParser(unittest.TestCase):
         """
         result = parse_dynamic_sql(query)
         self.assertEqual(result, ["'SELECT * FROM ' + @table_name"])
+
+    def test_translate_identifiers(self):
+        query = """
+        SELECT [column1], "column2", 'literal_string', [table].[column3]
+        FROM [my_table]
+        WHERE [column4] = 'some_value'
+        """
+        expected = """
+        SELECT `column1`, `column2`, 'literal_string', `table`.`column3`
+        FROM `my_table`
+        WHERE `column4` = 'some_value'
+        """
+        result = translate_identifiers(query)
+        self.assertEqual(result, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

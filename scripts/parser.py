@@ -21,6 +21,7 @@ def parse_window_functions(query: str):
     window_functions = re.findall(window_function_pattern, query)
     return window_functions
 
+
 def parse_calendar_functions(query: str):
     """Parse T-SQL date functions like DATEADD, DATEDIFF."""
     # Ensure capturing of the full argument list including closing parenthesis
@@ -28,9 +29,22 @@ def parse_calendar_functions(query: str):
     date_functions = re.findall(date_function_pattern, query)
     return [(func, args.rstrip(')') + ')') for func, args in date_functions]
 
+
 def parse_dynamic_sql(query: str):
     """Parse T-SQL dynamic SQL."""
     dynamic_sql_pattern = re.compile(r"SET\s+@query\s*=\s*(.*?);\s*EXEC\s+sp_executesql\s+@query", re.DOTALL)
     dynamic_sql = re.findall(dynamic_sql_pattern, query)
     # Normalize whitespace in the extracted dynamic SQL
     return [sql.strip() for sql in dynamic_sql]
+
+
+def translate_identifiers(query: str):
+    """Translate T-SQL identifiers to Spark SQL format."""
+    # Replace [] with ``
+    query = re.sub(r'\[([^\]]+)\]', r'`\1`', query)
+
+    # Replace "identifier" with `identifier`
+    query = re.sub(r'"([^"]+)"', r'`\1`', query)
+
+    # Ensure strings in single quotes are left untouched
+    return query
